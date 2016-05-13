@@ -6,10 +6,8 @@
 (node/enable-util-print!)
 
 (defn -main [& args]
-  (db/test-sqlite3)
-  #_(let [fname (first args)]
-    (if (fs/exists? fname)
-      (println "file exists")
-      (println "file does not exist"))))
+  (let [fname (first args)
+        db-file (if (fs/exists? fname) fname "test-db.sqlite3")]
+    (db/test-sqlite3 db-file)))
 
 (set! *main-cli-fn* -main)
