@@ -20,6 +20,7 @@
   },
   "homepage": "https://github.com/daveyarwood/ews",
   "dependencies": {
+    "db-migrate": "^0.10.0-beta.11",
     "sqlite3": "^3.1.3"
   }
 }
