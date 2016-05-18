@@ -20,7 +20,11 @@
   },
   "homepage": "https://github.com/daveyarwood/ews",
   "dependencies": {
-    "db-migrate": "^0.10.0-beta.11",
+    "db-migrate": "^0.10.0-beta.12",
+    "db-migrate-sqlite3": "^0.1.5",
+    "expand-home-dir": "0.0.3",
+    "mkdirp": "^0.5.1",
+    "node-fs-extra": "^0.8.1",
     "sqlite3": "^3.1.3"
   }
 }
