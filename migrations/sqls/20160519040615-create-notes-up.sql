@@ -1,0 +1,1 @@
+CREATE TABLE ews_note(  id INTEGER PRIMARY KEY,  body TEXT,  modifieddate INTEGER NOT NULL);

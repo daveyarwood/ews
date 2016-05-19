@@ -1,0 +1,1 @@
+CREATE TABLE ews_case(  id INTEGER PRIMARY KEY,  title TEXT NOT NULL,  userid INTEGER NOT NULL,  openeddate INTEGER NOT NULL,  closeddate INTEGER,  FOREIGN KEY(userid) REFERENCES ews_user(id));
