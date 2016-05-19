@@ -11,25 +11,19 @@
 
 (def ^:const DB_DIR             (expand-home-dir "~/.ews"))
 (def ^:const DB_FILE            (str DB_DIR "/ews.db"))
-(def ^:const MIGRATIONS_DIR     (str DB_DIR "/migrations"))
 (def ^:const SRC_DIR            (.join path (js* "__dirname") ".."))
 (def ^:const SRC_MIGRATIONS_DIR (.join path SRC_DIR "migrations"))
 
 (defn setup
   []
   (.sync mkdirp DB_DIR)
-  (.sync mkdirp MIGRATIONS_DIR)
-  (.sync mkdirp SRC_MIGRATIONS_DIR)
-  (.removeSync fs MIGRATIONS_DIR)
-  (.copySync fs SRC_MIGRATIONS_DIR MIGRATIONS_DIR))
+  (.sync mkdirp SRC_MIGRATIONS_DIR))
 
 (defn db-migrate
   [& [env]]
   (.getInstance (node/require "db-migrate")
                 true
-                (clj->js {:cwd    (if (= env :dev)
-                                    SRC_DIR
-                                    DB_DIR)
+                (clj->js {:cwd    SRC_DIR
                           :config {:default "sqlite3"
                                    :sqlite3 {:driver "sqlite3"
                                              :filename DB_FILE}}})))
