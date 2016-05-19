@@ -11,6 +11,7 @@
   (.shift (.-argv node/process))
 
   (case cmd
+    "setup"   (db/setup)
     "migrate" (db/migrate)
     (do
       (println "Unrecognized command.")

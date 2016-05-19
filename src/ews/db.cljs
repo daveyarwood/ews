@@ -14,19 +14,26 @@
 (def ^:const SRC_DIR            (.join path (js* "__dirname") ".."))
 (def ^:const SRC_MIGRATIONS_DIR (.join path SRC_DIR "migrations"))
 
-(defn setup
-  []
-  (.sync mkdirp DB_DIR)
-  (.sync mkdirp SRC_MIGRATIONS_DIR))
+; ensure that ~/.ews and /usr/local/lib/node_modules/ews/migrations exist
+(.sync mkdirp DB_DIR)
+(.sync mkdirp SRC_MIGRATIONS_DIR)
 
 (defn db-migrate
-  [& [env]]
+  []
   (.getInstance (node/require "db-migrate")
                 true
                 (clj->js {:cwd    SRC_DIR
                           :config {:default "sqlite3"
                                    :sqlite3 {:driver "sqlite3"
                                              :filename DB_FILE}}})))
+
+(defn setup
+  "Bootstraps ews.db:
+
+     - creates it if it doesn't exist
+     - runs any migrations that haven't been run yet"
+  []
+  (.up (db-migrate)))
 
 (defn migrate
   "Like node_modules/.bin/db-migrate, but using our programmatically created
@@ -37,8 +44,7 @@
      ews migrate up
      ews migrate create create-user-table"
   []
-  (setup)
-  (.run (db-migrate :dev)))
+  (.run (db-migrate)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
