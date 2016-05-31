@@ -1,7 +1,8 @@
 (ns ews.cli
   (:require [cljs.nodejs :as node]
             [ews.db      :as db]
-            [ews.fs      :as fs]))
+            [ews.fs      :as fs]
+            [ews.user    :as user]))
 
 (node/enable-util-print!)
 
@@ -13,6 +14,7 @@
   (case cmd
     "setup"   (db/setup)
     "migrate" (db/migrate)
+    "user"    (user/user)
     (do
       (println "Unrecognized command.")
       (.exit node/process 1))))

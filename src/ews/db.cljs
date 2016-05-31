@@ -1,21 +1,19 @@
 (ns ews.db
-  (:require [cljs.nodejs :as node]))
+  (:require [cljs.nodejs :as node]
+            [ews.config  :refer (EWS-HOME)]))
 
 (node/enable-util-print!)
 
 (defonce fs              (node/require "node-fs-extra"))
 (defonce path            (node/require "path"))
-(defonce expand-home-dir (node/require "expand-home-dir"))
 (defonce mkdirp          (node/require "mkdirp"))
 (defonce sqlite3         (node/require "sqlite3"))
 
-(def ^:const DB_DIR             (expand-home-dir "~/.ews"))
-(def ^:const DB_FILE            (str DB_DIR "/ews.db"))
+(def ^:const DB_FILE            (str EWS-HOME "/ews.db"))
 (def ^:const SRC_DIR            (.join path (js* "__dirname") ".."))
 (def ^:const SRC_MIGRATIONS_DIR (.join path SRC_DIR "migrations"))
 
-; ensure that ~/.ews and /usr/local/lib/node_modules/ews/migrations exist
-(.sync mkdirp DB_DIR)
+; ensure that /usr/local/lib/node_modules/ews/migrations exists
 (.sync mkdirp SRC_MIGRATIONS_DIR)
 
 (defn db-migrate
