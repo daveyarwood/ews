@@ -55,3 +55,6 @@
   [db f]
   (.serialize db #(f db)))
 
+(defn create-user!
+  [user]
+  "TODO")
