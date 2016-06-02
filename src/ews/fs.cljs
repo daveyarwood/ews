@@ -1,6 +1,6 @@
 (ns ews.fs
-  (:require [cljs.nodejs       :as node]
-            [cognitect.transit :as t])
+  (:require [cljs.nodejs :as    node]
+            [ews.util    :refer (from-json)])
   (:refer-clojure :exclude (exists?)))
 
 (defonce fs (node/require "fs"))
@@ -13,9 +13,8 @@
       false)))
 
 (defn read-json-file
-  "Reads a UTF-8 file containing JSON and parses it using transit-cljs.
+  "Reads a UTF-8 file containing JSON and parses it using transit.
 
    Returns a ClojureScript data structure."
   [filename]
-  (let [rdr (t/reader :json)]
-    (t/read rdr (.readFileSync fs filename "utf-8"))))
+  (from-json (.readFileSync fs filename "utf-8")))

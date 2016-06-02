@@ -1,6 +1,7 @@
 (ns ews.config
-  (:require [cljs.nodejs :as node]
-            [ews.fs      :as fs]))
+  (:require [cljs.nodejs :as    node]
+            [ews.fs      :as    fs]
+            [ews.util    :refer (to-json)]))
 
 (defonce expand-home-dir (node/require "expand-home-dir"))
 (defonce fs              (node/require "fs"))
@@ -11,16 +12,27 @@
 ; ensure that EWS-HOME exists
 (.sync mkdirp EWS-HOME)
 
-(def ^:const STATE
-  (let [state-file (str EWS-HOME "/state.json")
-        _          (when-not (fs/exists? state-file)
-                     (.writeFileSync fs state-file "{}"))]
-    (fs/read-json-file state-file)))
+(def ^:const STATE-FILE (str EWS-HOME "/state.json"))
+
+; if state file doesn't exist, create it and initialize it with an empty JSON
+; object
+(when-not (fs/exists? STATE-FILE)
+  (.writeFileSync fs STATE-FILE "{}"))
+
+(def ^:const STATE (fs/read-json-file STATE-FILE))
 
 (defn get-state
   [k]
   (get STATE k))
 
+(defn write-state!
+  [new-state]
+  (.writeFileSync fs STATE-FILE (to-json new-state)))
+
 (defn assoc-state!
   [k v]
-  "TODO")
+  (write-state! (assoc STATE k v)))
+
+(defn update-state!
+  [k f & args]
+  (write-state! (apply update STATE k f args)))
