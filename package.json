@@ -25,6 +25,7 @@
     "expand-home-dir": "0.0.3",
     "mkdirp": "^0.5.1",
     "node-fs-extra": "^0.8.1",
+    "prompt-sync": "^4.1.4",
     "sqlite3": "^3.1.3"
   }
 }

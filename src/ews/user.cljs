@@ -1,10 +1,13 @@
 (ns ews.user
-  (:require [ews.config :as config :refer (get-state assoc-state!)]
-            [ews.db     :as db]))
+  (:require [cljs.nodejs :as node]
+            [ews.config  :as config :refer (get-state assoc-state!)]
+            [ews.db      :as db]))
+
+(defonce prompt ((node/require "prompt-sync")))
 
 (defn prompt-for-user-info!
   []
-  "TODO")
+  {:name (prompt "Please enter your name: ")})
 
 (defn create-user!
   "Prompts the user for information, creates a user in the database, sets the
@@ -12,7 +15,8 @@
   []
   (let [new-user (prompt-for-user-info!)
         db-user  (db/create-user! new-user)]
-    (assoc-state! "currentUser" (select-keys db-user [:id]))
+    (prn db-user)
+    #_(assoc-state! "currentUser" (select-keys db-user [:id]))
     db-user))
 
 (defn current-user!
@@ -22,10 +26,12 @@
    user as the current user in the state file, and returns that user."
   []
   (or (get-state "currentUser")
-      (create-user!)))
+      (do
+        (println "No users have been created yet. Let's create one now.")
+        (create-user!))))
 
 (defn user
   []
   (if-let [{:keys [id]} (current-user!)]
     (println "Current user: " id)
-    (println "TODO: make user")))
+    (println "oops")))
