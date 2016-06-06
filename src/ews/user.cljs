@@ -15,7 +15,7 @@
   []
   (let [new-user (prompt-for-user-info!)
         db-user  (db/create-user! new-user)]
-    (prn db-user)
+    (prn :db-user db-user)
     #_(assoc-state! "currentUser" (select-keys db-user [:id]))
     db-user))
 

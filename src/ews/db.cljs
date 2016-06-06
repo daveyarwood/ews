@@ -83,17 +83,21 @@
 
    This can be used to insert a record and get the ID of the new record."
   [statement & [args]]
-  (let [c (chan)]
+  (let [c (chan)
+        a (atom nil)]
     (db-exec-with-callback statement
                            args
                            #(this-as result
                               (when % (throw %)) ; throw error if not successful
-                              (>! c (.-lastID result))))
-    c))
+                              (prn :outside :lastID (.-lastID result))
+                              (go (>! c (do (prn :inside :lastID (.-lastID result))
+                                            (.-lastID result))))))
+    (go (reset! a (<! c)))
+    @a))
 
 (defn create-user!
   [{:keys [name] :as user}]
-  (prn :name name)
-  (go
-    (<! (db-exec-returning-last-id "INSERT INTO ews_user (name) VALUES (?)" [name]))))
+  (let [v (db-exec-returning-last-id "INSERT INTO ews_user (name) VALUES (?)" [name])]
+    (prn :got v)
+    v))
 
