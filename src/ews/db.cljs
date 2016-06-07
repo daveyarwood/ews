@@ -81,23 +81,21 @@
   "Using db-exec-with-callback insanity, executes SQL `statement` using the
    sqlite3 db in EWS-HOME and returns `this.lastID` from the callback.
 
+   (Actually, returns a core.async channel that you can get the lastID from.)
+
    This can be used to insert a record and get the ID of the new record."
   [statement & [args]]
-  (let [c (chan)
-        a (atom nil)]
+  (let [c (chan)]
     (db-exec-with-callback statement
                            args
                            #(this-as result
                               (when % (throw %)) ; throw error if not successful
-                              (prn :outside :lastID (.-lastID result))
-                              (go (>! c (do (prn :inside :lastID (.-lastID result))
-                                            (.-lastID result))))))
-    (go (reset! a (<! c)))
-    @a))
+                              (go (>! c (.-lastID result)))))
+    c))
 
 (defn create-user!
+  "Creates a user and returns a core.async channel from which you can take the
+   ID of the new record."
   [{:keys [name] :as user}]
-  (let [v (db-exec-returning-last-id "INSERT INTO ews_user (name) VALUES (?)" [name])]
-    (prn :got v)
-    v))
+  (db-exec-returning-last-id "INSERT INTO ews_user (name) VALUES (?)" [name]))
 
