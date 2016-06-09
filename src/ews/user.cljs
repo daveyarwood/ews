@@ -13,14 +13,13 @@
 
 (defn create-user!
   "Prompts the user for information, creates a user in the database, sets the
-   new user as the current user, and returns that user."
+   new user as the current user, and returns the ID of the new record."
   []
   (go
     (let [new-user (prompt-for-user-info!)
-          id       (<! (db/create-user! new-user))
-          user     {:id id}]
-      (assoc-state! "currentUser" user)
-      user)))
+          id       (<! (db/create-user! new-user))]
+      (assoc-state! "currentUser" {:id id})
+      id)))
 
 (defn current-user!
   "Returns a core.async channel from which the current user may be taken.
@@ -33,15 +32,16 @@
   []
   (let [c (chan)]
     (go
-      (>! c (or (get-state "currentUser")
-                (do
-                  (println "No users have been created yet."
-                           "Let's create one now")
-                  (<! (create-user!))))))
+      (>! c (let [id (or (some-> (get-state "currentUser") :id)
+                         (do
+                           (println "No users have been created yet."
+                                    "Let's create one now")
+                           (<! (create-user!))))]
+              (<! (db/user id)))))
     c))
 
 (defn user
   []
   (go
-    (let [{:keys [id] :as user} (<! (current-user!))]
-      (println "Current user: " id))))
+    (let [{:strs [id name] :as user} (<! (current-user!))]
+      (println "Current user: " name))))

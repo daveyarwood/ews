@@ -93,9 +93,47 @@
                               (go (>! c (.-lastID result)))))
     c))
 
+(defn- db-get-with-callback
+  "Executes SQL `query` using the sqlite3 db in EWS-HOME.
+
+   If `args` is non-nil, they are interpolated into the SQL.
+
+   The callback `cb` is passed to the node-sqlite3 db.get function. This
+   callback takes two arguments:
+
+     1. An error, if execution is not successful.
+     2. The first row in the results."
+  [query args cb]
+  (do-with-ews-db #(.get % query (apply array (or args [])) cb)))
+
+(defn- db-get
+  "Runs `query` against the sqlite3 db in EWS-HOME and returns the first
+   result.
+
+   (Actually, returns a core.async channel from which that result can be
+   taken.)
+
+   You can't put nil on a core.async channel, so if the record doesn't exist,
+   the channel will yield an empty map."
+  [query & [args]]
+  (let [c (chan)]
+    (db-get-with-callback query args (fn [err row]
+                                       (when err (throw err))
+                                       (go (>! c (if row
+                                                   (js->clj row)
+                                                   {})))))
+    c))
+
 (defn create-user!
   "Creates a user and returns a core.async channel from which you can take the
    ID of the new record."
   [{:keys [name] :as user}]
   (db-exec-returning-last-id "INSERT INTO ews_user (name) VALUES (?)" [name]))
+
+(defn user
+  "Gets a user from the database.
+
+   Returns a core.async channel from which the user can be taken."
+  [id]
+  (db-get "SELECT * FROM ews_user WHERE id = ?" [id]))
 
