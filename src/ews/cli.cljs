@@ -1,8 +1,8 @@
 (ns ews.cli
-  (:require [cljs.nodejs :as node]
-            [ews.db      :as db]
-            [ews.fs      :as fs]
-            [ews.user    :as user]))
+  (:require [cljs.nodejs    :as node]
+            [ews.db.migrate :as db]
+            [ews.fs         :as fs]
+            [ews.user       :as user]))
 
 (node/enable-util-print!)
 
