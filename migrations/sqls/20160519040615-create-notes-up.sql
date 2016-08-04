@@ -1,1 +1,1 @@
-CREATE TABLE ews_note(  id INTEGER PRIMARY KEY,  body TEXT,  modifieddate INTEGER NOT NULL);
+CREATE TABLE ews_note(  id INTEGER PRIMARY KEY,  itemid INTEGER NOT NULL,  body TEXT,  modifieddate INTEGER NOT NULL,  FOREIGN KEY(itemid) REFERENCES ews_item(id));
