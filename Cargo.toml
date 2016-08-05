@@ -1,0 +1,6 @@
+[package]
+name = "ews"
+version = "0.1.0"
+authors = ["Dave Yarwood <dave.yarwood@gmail.com>"]
+
+[dependencies]
