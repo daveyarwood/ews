@@ -28,5 +28,6 @@
      ews migrate up
      ews migrate create create-user-table"
   []
+  (.shift (.-argv node/process)) ; this is stupid, but db-migrate requires it
   (.run (db-migrate)))
 
