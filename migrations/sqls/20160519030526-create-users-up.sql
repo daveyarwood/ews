@@ -1,1 +1,0 @@
-CREATE TABLE ews_user(  id INTEGER PRIMARY KEY,  name TEXT NOT NULL);

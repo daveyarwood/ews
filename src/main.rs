@@ -1,3 +1,9 @@
+extern crate ews;
+
+use ews::db;
+
 fn main() {
-    println!("Hello, world!");
+    db::run_migrations().unwrap();
+
+    println!("done");
 }

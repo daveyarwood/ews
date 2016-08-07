@@ -1,1 +1,0 @@
-CREATE TABLE ews_item(  id INTEGER PRIMARY KEY,  title TEXT NOT NULL,  caseid INTEGER NOT NULL,  followupdate INTEGER,  FOREIGN KEY(caseid) REFERENCES ews_case(id));
