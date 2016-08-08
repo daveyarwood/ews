@@ -4,6 +4,7 @@ version = "0.1.0"
 authors = ["Dave Yarwood <dave.yarwood@gmail.com>"]
 
 [dependencies]
+clap                = "2.10.0"
 schemamama_rusqlite = "0.3.0"
 schemamama          = "0.0.11"
 rusqlite            = "0.6.0"
