@@ -67,6 +67,10 @@ ews_migration!(1471637808, CreateState, "create state table",
                 );",
                 "DROP TABLE ews_state;");
 
+ews_migration!(1471717574, InsertInitialState, "insert initial state entry",
+               "INSERT INTO ews_state (userid) VALUES (0)",
+               "DELETE FROM ews_state WHERE id = 1");
+
 macro_rules! register {
     ( $migrator:expr, $( $migration:ident ),* ) => {
         $(
@@ -80,6 +84,7 @@ pub fn run(conn: &rusqlite::Connection) -> Result<(), MigrationError> {
     adapter.setup_schema();
 
     let mut migrator = schemamama::Migrator::new(adapter);
-    register!(migrator, CreateUsers, CreateCases, CreateItems, CreateNotes);
+    register!(migrator, CreateUsers, CreateCases, CreateItems, CreateNotes,
+              CreateState, InsertInitialState);
     migrator.up(None)
 }
