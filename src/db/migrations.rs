@@ -1,6 +1,8 @@
 use rusqlite;
-use schemamama::Migrator;
+use schemamama;
 use schemamama_rusqlite::{SqliteAdapter, SqliteMigration, SqliteMigrationError};
+
+pub type MigrationError = schemamama::Error<SqliteMigrationError>;
 
 macro_rules! ews_migration {
     ( $version:expr, $migration:ident, $desc:expr, $up:expr, $down:expr) => {
@@ -65,12 +67,11 @@ macro_rules! register {
     }
 }
 
-pub fn run(conn: &rusqlite::Connection) -> Result<(), SqliteMigrationError> {
+pub fn run(conn: &rusqlite::Connection) -> Result<(), MigrationError> {
     let adapter = SqliteAdapter::new(conn);
     adapter.setup_schema();
 
-    let mut migrator = Migrator::new(adapter);
+    let mut migrator = schemamama::Migrator::new(adapter);
     register!(migrator, CreateUsers, CreateCases, CreateItems, CreateNotes);
-    // FIXME: bogus number that will be higher than any epoch timestamp
-    migrator.up(1999999999)
+    migrator.up(None)
 }
