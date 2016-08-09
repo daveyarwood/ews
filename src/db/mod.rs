@@ -9,6 +9,7 @@ pub fn get_connection() -> Connection {
 }
 
 pub fn run_migrations() -> Result<(), SqliteMigrationError> {
+    config::create_ews_home_dir();
     let conn = get_connection();
     migrations::run(&conn)
 }

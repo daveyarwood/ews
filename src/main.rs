@@ -3,6 +3,8 @@ extern crate ews;
 
 use clap::{App, SubCommand};
 use ews::db;
+use std::io::stdout;
+use std::io::Write;
 
 // https://github.com/kbknapp/clap-rs/blob/master/examples/08_subcommands.rs
 
@@ -18,7 +20,10 @@ fn main() {
     match matches.subcommand_name() {
         Some("setup") => {
             print!("Setting up ews db... ");
+            stdout().flush().unwrap();
+
             db::run_migrations().unwrap();
+
             println!("done.");
         },
         Some("user") => {
