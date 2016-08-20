@@ -22,42 +22,50 @@ macro_rules! ews_migration {
 }
 
 ews_migration!(1470499978, CreateUsers, "create users table",
-               "CREATE TABLE ews_user(\
-                  id INTEGER PRIMARY KEY, \
-                  name TEXT NOT NULL\
+               "CREATE TABLE ews_user(
+                  id INTEGER PRIMARY KEY,
+                  name TEXT NOT NULL
                 );",
                 "DROP TABLE ews_user;");
 
 ews_migration!(1470499979, CreateCases, "create cases table",
-               "CREATE TABLE ews_case(\
-                  id INTEGER PRIMARY KEY, \
-                  title TEXT NOT NULL, \
-                  userid INTEGER NOT NULL, \
-                  openeddate INTEGER NOT NULL, \
-                  closeddate INTEGER, \
-                  FOREIGN KEY(userid) REFERENCES ews_user(id)\
+               "CREATE TABLE ews_case(
+                  id INTEGER PRIMARY KEY,
+                  title TEXT NOT NULL,
+                  userid INTEGER NOT NULL,
+                  openeddate INTEGER NOT NULL,
+                  closeddate INTEGER,
+                  FOREIGN KEY(userid) REFERENCES ews_user(id)
                 );",
                 "DROP TABLE ews_case;");
 
 ews_migration!(1470499980, CreateItems, "create items table",
-               "CREATE TABLE ews_item(\
-                  id INTEGER PRIMARY KEY, \
-                  title TEXT NOT NULL, \
-                  caseid INTEGER NOT NULL, \
-                  followupdate INTEGER, \
-                  FOREIGN KEY(caseid) REFERENCES ews_case(id)\
+               "CREATE TABLE ews_item(
+                  id INTEGER PRIMARY KEY,
+                  title TEXT NOT NULL,
+                  caseid INTEGER NOT NULL,
+                  followupdate INTEGER,
+                  FOREIGN KEY(caseid) REFERENCES ews_case(id)
                 );",
                 "DROP TABLE ews_item;");
 
 ews_migration!(1470499981, CreateNotes, "create notes table",
-               "CREATE TABLE ews_note(\
-                  id INTEGER PRIMARY KEY, \
-                  itemid INTEGER NOT NULL, \
-                  body TEXT, \
-                  modifieddate INTEGER NOT NULL, \
-                  FOREIGN KEY(itemid) REFERENCES ews_item(id)\
+               "CREATE TABLE ews_note(
+                  id INTEGER PRIMARY KEY,
+                  itemid INTEGER NOT NULL,
+                  body TEXT,
+                  modifieddate INTEGER NOT NULL,
+                  FOREIGN KEY(itemid) REFERENCES ews_item(id)
                 );",
                 "DROP TABLE ews_note;");
+
+ews_migration!(1471637808, CreateState, "create state table",
+               "CREATE TABLE ews_state(
+                  id INTEGER PRIMARY KEY,
+                  userid INTEGER,
+                  FOREIGN KEY(userid) REFERENCES ews_user(id)
+                );",
+                "DROP TABLE ews_state;");
 
 macro_rules! register {
     ( $migrator:expr, $( $migration:ident ),* ) => {
