@@ -30,3 +30,9 @@ pub fn db_file() -> PathBuf {
     path
 }
 
+pub fn db_file_exists() -> bool {
+    match fs::metadata(db_file()) {
+        Err(_)   => false,
+        Ok(path) => path.is_file()
+    }
+}

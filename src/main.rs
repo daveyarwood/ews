@@ -15,6 +15,14 @@ fn main() {
                     .about("Displays information about the current user."))
         .get_matches();
 
+    if !(ews::config::ews_home_dir_exists()
+         && ews::config::db_file_exists()) &&
+        matches.subcommand_name() != Some("setup") {
+        println!("ews home directory and/or db file not found.");
+        println!("Please run `ews setup` to get things set up.");
+        std::process::exit(1);
+    }
+
     match matches.subcommand_name() {
         Some("setup") => {
             if !ews::config::ews_home_dir_exists() {
@@ -28,7 +36,7 @@ fn main() {
 
             println!("Setting up ews db...");
             if db::run_migrations().is_err() {
-                println!("\nERROR: Failed to run db migrations.");
+                println!("ERROR: Failed to run db migrations.");
                 std::process::exit(1);
             }
 
