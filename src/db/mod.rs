@@ -1,4 +1,5 @@
 mod migrations;
+pub mod case;
 pub mod user;
 
 use config;
