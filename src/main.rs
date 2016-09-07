@@ -6,8 +6,6 @@ use clap::{App, Arg, SubCommand};
 use ews::db;
 use rusqlite::Connection;
 
-// https://github.com/kbknapp/clap-rs/blob/master/examples/08_subcommands.rs
-
 fn create_new_user(conn: &Connection) {
     println!("No users have been created yet. \
               Let's create one now.");
