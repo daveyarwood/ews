@@ -6,16 +6,33 @@ use clap::{App, Arg, SubCommand};
 use ews::db;
 use rusqlite::Connection;
 
+macro_rules! abort_on_error {
+    ( $x:expr, $body:expr ) => {
+        match $x {
+            Ok(_) => $body,
+            Err(e) => {
+                println!("{:?}", e);
+                std::process::exit(1);
+            }
+        }
+    };
+    ( $x:expr, $id:ident, $body:expr ) => {
+        match $x {
+            Ok($id) => $body,
+            Err(e) => {
+                println!("{:?}", e);
+                std::process::exit(1);
+            }
+        }
+    }
+}
+
 fn create_new_user(conn: &Connection) {
     println!("No users have been created yet. \
               Let's create one now.");
-    match ews::db::user::create_new_user(conn) {
-        Ok(()) => { println!("User created."); },
-        Err(e) => {
-            println!("{:?}", e);
-            std::process::exit(1);
-        }
-    }
+    abort_on_error!(ews::db::user::create_new_user(conn), {
+        println!("User created.");
+    });
 }
 
 macro_rules! with_current_user {
@@ -55,8 +72,8 @@ fn main() {
         Some("all") => {
             let conn = ews::db::get_connection();
             with_current_user!(&conn, user, {
-                match ews::db::case::all_open_cases(&conn, user.id) {
-                    Ok(cases) => {
+                abort_on_error!(
+                    ews::db::case::all_open_cases(&conn, user.id), cases, {
                         println!("ID\tTITLE\tOPEN FOR");
                         for case in cases {
                             println!("{}\t{}\t{} days",
@@ -64,46 +81,30 @@ fn main() {
                                      case.title,
                                      ews::util::age_in_days(case.opened_date));
                         }
-                    },
-                    Err(e) => {
-                        println!("{:?}", e);
-                        std::process::exit(1);
-                    }
-                }
+                });
             });
         },
         Some("open") => {
             let conn = ews::db::get_connection();
             with_current_user!(&conn, user, {
                 let matches = matches.subcommand_matches("open").unwrap();
-                match ews::db::case::create_new_case(&conn,
-                                                     matches.value_of("title"),
-                                                     user.id) {
-                    Err(e) => {
-                        println!("{:?}", e);
-                        std::process::exit(1);
-                    },
-                    Ok(_) => {
+                let title = matches.value_of("title");
+                abort_on_error!(
+                    ews::db::case::create_new_case(&conn, title, user.id), {
                         println!("Case created.");
                     }
-                }
+                );
             });
         },
         Some("setup") => {
             if !ews::config::ews_home_dir_exists() {
                 let dir_name = ews::config::ews_home_dir().to_str().unwrap().to_owned();
                 println!("Creating {}...", dir_name);
-                if ews::config::create_ews_home_dir().is_err() {
-                    println!("ERROR: Unable to create directory: {}", dir_name);
-                    std::process::exit(1);
-                }
+                abort_on_error!(ews::config::create_ews_home_dir(), {});
             }
 
             println!("Setting up ews db...");
-            if db::run_migrations().is_err() {
-                println!("ERROR: Failed to run db migrations.");
-                std::process::exit(1);
-            }
+            abort_on_error!(db::run_migrations(), {});
 
             println!("Setup was successful.");
         },
