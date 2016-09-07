@@ -16,7 +16,7 @@ fn create_user(conn: &rusqlite::Connection, name: String)
 
 pub fn current_user(conn: &rusqlite::Connection) -> Option<User> {
     let result: Result<User, rusqlite::Error> = conn.query_row_and_then(
-      "SELECT id, name from ews_user
+      "SELECT id, name FROM ews_user
        WHERE  id in (
          SELECT userid FROM ews_state
          WHERE userid != 0
