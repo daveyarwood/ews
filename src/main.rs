@@ -3,7 +3,8 @@ extern crate ews;
 extern crate rusqlite;
 
 use clap::{App, Arg, SubCommand};
-use ews::db;
+use ews::{config, db, util};
+use ews::query::Query;
 use rusqlite::Connection;
 
 macro_rules! abort_on_error {
@@ -30,14 +31,14 @@ macro_rules! abort_on_error {
 fn create_new_user(conn: &Connection) {
     println!("No users have been created yet. \
               Let's create one now.");
-    abort_on_error!(ews::db::user::create_new_user(conn), {
+    abort_on_error!(db::user::create_new_user(conn), {
         println!("User created.");
     });
 }
 
 macro_rules! with_current_user {
     ( $conn:expr, $user:ident, $body:expr ) => {
-        match ews::db::user::current_user($conn) {
+        match db::user::current_user($conn) {
             None => { create_new_user($conn); },
             Some($user) => $body
         }
@@ -49,6 +50,11 @@ fn main() {
         .version(env!("CARGO_PKG_VERSION"))
         .subcommand(SubCommand::with_name("all")
                     .about("Lists all open cases."))
+        .subcommand(SubCommand::with_name("close")
+                    .about("Closes an open case.")
+                    .arg(Arg::with_name("case")
+                         .help("a case ID or search string")
+                         .index(1)))
         .subcommand(SubCommand::with_name("open")
                     .about("Opens a new case.")
                     .arg(Arg::with_name("title")
@@ -60,8 +66,8 @@ fn main() {
                     .about("Displays information about the current user."))
         .get_matches();
 
-    if !(ews::config::ews_home_dir_exists()
-         && ews::config::db_file_exists()) &&
+    if !(config::ews_home_dir_exists()
+         && config::db_file_exists()) &&
         matches.subcommand_name() != Some("setup") {
         println!("ews home directory and/or db file not found.");
         println!("Please run `ews setup` to get things set up.");
@@ -70,37 +76,68 @@ fn main() {
 
     match matches.subcommand_name() {
         Some("all") => {
-            let conn = ews::db::get_connection();
+            let conn = db::get_connection();
             with_current_user!(&conn, user, {
                 abort_on_error!(
-                    ews::db::case::all_open_cases(&conn, user.id), cases, {
+                    db::case::all_open_cases(&conn, user.id), cases, {
                         println!("ID\tTITLE\tOPEN FOR");
                         for case in cases {
                             println!("{}\t{}\t{} days",
                                      case.id,
                                      case.title,
-                                     ews::util::age_in_days(case.opened_date));
+                                     util::age_in_days(case.opened_date));
                         }
                 });
             });
         },
-        Some("open") => {
-            let conn = ews::db::get_connection();
+        Some("close") => {
+            let matches = matches.subcommand_matches("close").unwrap();
+            let case_query = match matches.value_of("case") {
+                Some(query) => Query::new(query.to_string()),
+                None => {
+                    let query = util::prompt(
+                        "Please enter a case ID or part of the title: ");
+                    Query::new(query)
+                }
+            };
+
+            let conn = db::get_connection();
             with_current_user!(&conn, user, {
-                let matches = matches.subcommand_matches("open").unwrap();
-                let title = matches.value_of("title");
+                abort_on_error!(db::case::find_case(&conn, user.id, case_query),
+                                result, {
+                    match result {
+                        Some(case) => {
+                            abort_on_error!(
+                                db::case::close_case(&conn, case.id), {
+                                    println!("Case closed.");
+                            });
+                        },
+                        None => {
+                            // FIXME: detect whether it's an ID or a search string
+                            println!("No open case found with that ID or search string.");
+                        }
+                    }
+                });
+            });
+        }
+        Some("open") => {
+            let matches = matches.subcommand_matches("open").unwrap();
+            let title = matches.value_of("title");
+
+            let conn = db::get_connection();
+            with_current_user!(&conn, user, {
                 abort_on_error!(
-                    ews::db::case::create_new_case(&conn, title, user.id), {
+                    db::case::open_case(&conn, title, user.id), {
                         println!("Case created.");
                     }
                 );
             });
         },
         Some("setup") => {
-            if !ews::config::ews_home_dir_exists() {
-                let dir_name = ews::config::ews_home_dir().to_str().unwrap().to_owned();
+            if !config::ews_home_dir_exists() {
+                let dir_name = config::ews_home_dir().to_str().unwrap().to_owned();
                 println!("Creating {}...", dir_name);
-                abort_on_error!(ews::config::create_ews_home_dir(), {});
+                abort_on_error!(config::create_ews_home_dir(), {});
             }
 
             println!("Setting up ews db...");
@@ -109,7 +146,7 @@ fn main() {
             println!("Setup was successful.");
         },
         Some("user") => {
-            let conn = ews::db::get_connection();
+            let conn = db::get_connection();
             with_current_user!(&conn, user, {
                 println!("Current user: {}", user.name);
             });

@@ -1,6 +1,5 @@
 use rusqlite;
-use std::io;
-use std::io::Write;
+use util;
 
 pub struct User {
     pub id: i64,
@@ -38,12 +37,9 @@ pub fn set_current_user(conn: &rusqlite::Connection, user_id: i64)
 
 pub fn create_new_user(conn: &rusqlite::Connection)
     -> Result<(), rusqlite::Error> {
-    print!("Please enter your name: ");
-    io::stdout().flush().unwrap();
-    let mut name = String::new();
-    io::stdin().read_line(&mut name).unwrap();
+    let name = util::prompt("Please enter your name: ");
 
-    match create_user(conn, name.trim().to_string()) {
+    match create_user(conn, name) {
         Ok(id) => set_current_user(conn, id),
         Err(e) => Err(e)
     }

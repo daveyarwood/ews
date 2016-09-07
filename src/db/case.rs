@@ -1,8 +1,8 @@
+use query::Query;
 use rusqlite;
-use std::io;
-use std::io::Write;
 use time;
 use time::Timespec;
+use util;
 
 pub struct Case {
     pub id: i64,
@@ -32,30 +32,40 @@ pub fn all_open_cases(conn: &rusqlite::Connection, user_id: i64)
     rows.collect()
 }
 
-pub fn create_case(conn: &rusqlite::Connection, title: String, user_id: i64)
+pub fn find_case(conn: &rusqlite::Connection, user_id: i64, query: Query)
+    -> Result<Option<Case>, rusqlite::Error> {
+    // FIXME
+    Ok(None)
+}
+
+pub fn create_case(conn: &rusqlite::Connection, title: String, user_id: i64, opened_date: Timespec)
     -> Result<i64, rusqlite::Error> {
     conn.execute_named(
       "INSERT INTO ews_case (title, userid, openeddate)
        VALUES (:title, :userid, :openeddate)",
        &[(":title", &title),
          (":userid", &user_id),
-         (":openeddate", &time::get_time())]
+         (":openeddate", &opened_date)]
     ).map(|_| conn.last_insert_rowid())
 }
 
-pub fn create_new_case(conn: &rusqlite::Connection, title: Option<&str>, user_id: i64)
+pub fn open_case(conn: &rusqlite::Connection, title: Option<&str>, user_id: i64)
     -> Result<i64, rusqlite::Error> {
     let title = match title {
         Some(title) => title.to_string(),
-        None => {
-            print!("Please enter a title for this case: ");
-            io::stdout().flush().unwrap();
-            let mut title = String::new();
-            io::stdin().read_line(&mut title).unwrap();
-            title.trim().to_string()
-        }
+        None => { util::prompt("Please enter a title for this case: ") }
     };
 
-    create_case(conn, title, user_id)
+    create_case(conn, title, user_id, time::get_time())
+}
+
+pub fn close_case(conn: &rusqlite::Connection, case_id: i64)
+    -> Result<(), rusqlite::Error> {
+    conn.execute_named(
+      "UPDATE ews_case
+          SET closeddate = :closed_date
+        WHERE id = :case_id",
+       &[(":case_id", &case_id), (":closed_date", &time::get_time())]
+    ).map(|_| ())
 }
 
