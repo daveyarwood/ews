@@ -20,6 +20,15 @@ fn create_new_user(conn: &Connection) {
     }
 }
 
+macro_rules! with_current_user {
+    ( $conn:expr, $user:ident, $body:expr ) => {
+        match ews::db::user::current_user($conn) {
+            None => { create_new_user($conn); },
+            Some($user) => $body
+        }
+    }
+}
+
 fn main() {
     let matches = App::new("ews")
         .version(env!("CARGO_PKG_VERSION"))
@@ -45,23 +54,20 @@ fn main() {
     match matches.subcommand_name() {
         Some("open") => {
             let conn = ews::db::get_connection();
-            match ews::db::user::current_user(&conn) {
-                None => { create_new_user(&conn); },
-                Some(user) => {
-                    let matches = matches.subcommand_matches("open").unwrap();
-                    match ews::db::case::create_new_case(&conn,
-                                                         matches.value_of("title"),
-                                                         user.id) {
-                        Err(e) => {
-                            println!("{:?}", e);
-                            std::process::exit(1);
-                        },
-                        Ok(_) => {
-                            println!("Case created.");
-                        }
+            with_current_user!(&conn, user, {
+                let matches = matches.subcommand_matches("open").unwrap();
+                match ews::db::case::create_new_case(&conn,
+                                                     matches.value_of("title"),
+                                                     user.id) {
+                    Err(e) => {
+                        println!("{:?}", e);
+                        std::process::exit(1);
+                    },
+                    Ok(_) => {
+                        println!("Case created.");
                     }
                 }
-            }
+            });
         },
         Some("setup") => {
             if !ews::config::ews_home_dir_exists() {
@@ -83,10 +89,9 @@ fn main() {
         },
         Some("user") => {
             let conn = ews::db::get_connection();
-            match ews::db::user::current_user(&conn) {
-                None => { create_new_user(&conn); },
-                Some(user) => { println!("Current user: {}", user.name); }
-            }
+            with_current_user!(&conn, user, {
+                println!("Current user: {}", user.name);
+            });
         },
         Some(_) => {
             panic!("this should never happen");
