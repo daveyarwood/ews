@@ -30,6 +30,8 @@ macro_rules! with_current_user {
 fn main() {
     let matches = App::new("ews")
         .version(env!("CARGO_PKG_VERSION"))
+        .subcommand(SubCommand::with_name("all")
+                    .about("Lists all open cases."))
         .subcommand(SubCommand::with_name("open")
                     .about("Opens a new case.")
                     .arg(Arg::with_name("title")
@@ -50,6 +52,26 @@ fn main() {
     }
 
     match matches.subcommand_name() {
+        Some("all") => {
+            let conn = ews::db::get_connection();
+            with_current_user!(&conn, user, {
+                match ews::db::case::all_open_cases(&conn, user.id) {
+                    Ok(cases) => {
+                        println!("ID\tTITLE\tOPEN FOR");
+                        for case in cases {
+                            println!("{}\t{}\t{} days",
+                                     case.id,
+                                     case.title,
+                                     ews::util::age_in_days(case.opened_date));
+                        }
+                    },
+                    Err(e) => {
+                        println!("{:?}", e);
+                        std::process::exit(1);
+                    }
+                }
+            });
+        },
         Some("open") => {
             let conn = ews::db::get_connection();
             with_current_user!(&conn, user, {

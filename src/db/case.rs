@@ -9,7 +9,27 @@ pub struct Case {
     pub title: String,
     pub user_id: i64,
     pub opened_date: Timespec,
-    pub closed_date: Timespec
+    pub closed_date: Option<Timespec>
+}
+
+pub fn all_open_cases(conn: &rusqlite::Connection, user_id: i64)
+    -> Result<Vec<Case>, rusqlite::Error> {
+    let mut stmt = try!(conn.prepare("SELECT id, title, openeddate
+                             FROM ews_case
+                             WHERE userid = :user_id
+                             AND closeddate IS NULL"));
+
+    let rows = try!(stmt.query_map(&[&user_id], |row| {
+        Case {
+            id: row.get(0),
+            title: row.get(1),
+            user_id: user_id,
+            opened_date: row.get(2),
+            closed_date: None
+        }
+    }));
+
+    rows.collect()
 }
 
 pub fn create_case(conn: &rusqlite::Connection, title: String, user_id: i64)
