@@ -15,9 +15,9 @@ pub struct Case {
 pub fn all_open_cases(conn: &rusqlite::Connection, user_id: i64)
     -> Result<Vec<Case>, rusqlite::Error> {
     let mut stmt = try!(conn.prepare("SELECT id, title, openeddate
-                             FROM ews_case
-                             WHERE userid = :user_id
-                             AND closeddate IS NULL"));
+                                        FROM ews_case
+                                       WHERE userid = :user_id
+                                         AND closeddate IS NULL"));
 
     let rows = try!(stmt.query_map(&[&user_id], |row| {
         Case {
