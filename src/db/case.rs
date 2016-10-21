@@ -23,6 +23,12 @@ pub fn print_cases(cases: Vec<Case>) {
     }
 }
 
+pub fn print_summary(conn: &rusqlite::Connection, user_id: i64, query: Query)
+    -> Result<(), rusqlite::Error> {
+    // TODO
+    Ok(())
+}
+
 pub fn all_open_cases(conn: &rusqlite::Connection, user_id: i64)
     -> Result<Vec<Case>, rusqlite::Error> {
     let mut stmt = try!(conn.prepare("SELECT id, title, openeddate
@@ -41,6 +47,61 @@ pub fn all_open_cases(conn: &rusqlite::Connection, user_id: i64)
     }));
 
     rows.collect()
+}
+
+pub fn followups_due_today(conn: &rusqlite::Connection, user_id: i64)
+    -> Result<Vec<Case>, rusqlite::Error> {
+    let tomorrow = util::midnight_tomorrow();
+
+    let mut stmt = try!(conn.prepare(
+        "SELECT c.id, c.title, c.openeddate
+           FROM ews_case c
+     INNER JOIN ews_item i ON c.id = i.caseid
+          WHERE c.userid = :user_id
+            AND c.closeddate IS NULL
+            AND i.followupdate IS NOT NULL
+            AND i.followupdate < :tomorrow"));
+
+    let rows = try!(stmt.query_map(&[&user_id, &tomorrow], |row| {
+        Case {
+            id: row.get(0),
+            user_id: user_id,
+            title: row.get(1),
+            opened_date: row.get(2),
+            closed_date: None
+        }
+    }));
+
+    rows.collect()
+}
+
+pub fn no_action_in_days(days: i64, conn: &rusqlite::Connection, user_id: i64)
+    -> Result<Vec<Case>, rusqlite::Error> {
+    // let mut stmt = try!(conn.prepare(
+    //     "SELECT c.id, c.title, c.openeddate
+    //        FROM ews_case c
+    //  INNER JOIN ews_item i ON c.id = i.caseid
+    //       WHERE c.userid = :user_id
+    //         AND c.closeddate IS NULL
+    //         ..."));
+
+    // let rows = try!(stmt.query_map(&[&user_id, &tomorrow], |row| {
+    //     Case {
+    //         id: row.get(0),
+    //         user_id: user_id,
+    //         title: row.get(1),
+    //         opened_date: row.get(2),
+    //         closed_date: None
+    //     }
+    // }));
+
+    // rows.collect()
+
+    // TODO:
+    //
+    // - migration: add CreatedDate (required integer) to items
+    // - write query that returns cases with no items within the last 30 days
+    Ok(Vec::<Case>::new())
 }
 
 fn choose_case(conn: &rusqlite::Connection, user_id: i64, cases: Vec<Case>,

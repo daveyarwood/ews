@@ -8,6 +8,15 @@ use ews::query::Query;
 use rusqlite::Connection;
 
 macro_rules! abort_on_error {
+    ( $x:expr ) => {
+        match $x {
+            Ok(_) => {},
+            Err(e) => {
+                println!("{:?}", e);
+                std::process::exit(1);
+            }
+        }
+    };
     ( $x:expr, $body:expr ) => {
         match $x {
             Ok(_) => $body,
@@ -52,6 +61,11 @@ fn main() {
                     .about("Lists all open cases."))
         .subcommand(SubCommand::with_name("close")
                     .about("Closes an open case.")
+                    .arg(Arg::with_name("case")
+                         .help("a case ID or search string")
+                         .index(1)))
+        .subcommand(SubCommand::with_name("info")
+                    .about("Displays a summary of the status of your cases.")
                     .arg(Arg::with_name("case")
                          .help("a case ID or search string")
                          .index(1)))
@@ -118,7 +132,26 @@ fn main() {
                     }
                 });
             });
-        }
+        },
+        Some("info") => {
+            let conn = db::get_connection();
+            with_current_user!(&conn, user, {
+                let matches = matches.subcommand_matches("info").unwrap();
+                match matches.value_of("case") {
+                    None => {
+                        abort_on_error!(
+                            db::summary::print_summary(&conn, user.id)
+                        );
+                    },
+                    Some(query) => {
+                        let case_query = Query::new(query.to_string());
+                        abort_on_error!(
+                            db::case::print_summary(&conn, user.id, case_query)
+                        );
+                    }
+                }
+            });
+        },
         Some("open") => {
             let matches = matches.subcommand_matches("open").unwrap();
             let title = matches.value_of("title");
