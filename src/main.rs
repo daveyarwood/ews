@@ -80,13 +80,7 @@ fn main() {
             with_current_user!(&conn, user, {
                 abort_on_error!(
                     db::case::all_open_cases(&conn, user.id), cases, {
-                        println!("ID\tTITLE\tOPEN FOR");
-                        for case in cases {
-                            println!("{}\t{}\t{} days",
-                                     case.id,
-                                     case.title,
-                                     util::age_in_days(case.opened_date));
-                        }
+                        db::case::print_cases(cases);
                 });
             });
         },
@@ -101,20 +95,25 @@ fn main() {
                 }
             };
 
+            let query_type = match case_query {
+                Query::Id(_) => "ID",
+                Query::SearchString(_) => "search string"
+            };
+
             let conn = db::get_connection();
             with_current_user!(&conn, user, {
-                abort_on_error!(db::case::find_case(&conn, user.id, case_query),
-                                result, {
+                abort_on_error!(
+                    db::case::find_case(&conn, user.id, case_query, true),
+                                        result, {
                     match result {
                         Some(case) => {
                             abort_on_error!(
                                 db::case::close_case(&conn, case.id), {
-                                    println!("Case closed.");
+                                    println!("\nCase closed.");
                             });
                         },
                         None => {
-                            // FIXME: detect whether it's an ID or a search string
-                            println!("No open case found with that ID or search string.");
+                            println!("No open case found with that {}.", query_type);
                         }
                     }
                 });

@@ -4,12 +4,23 @@ use time;
 use time::Timespec;
 use util;
 
+#[derive(Clone, Debug)]
 pub struct Case {
     pub id: i64,
     pub title: String,
     pub user_id: i64,
     pub opened_date: Timespec,
     pub closed_date: Option<Timespec>
+}
+
+pub fn print_cases(cases: Vec<Case>) {
+    println!("ID\tTITLE\tOPEN FOR");
+    for case in cases {
+        println!("{}\t{}\t{} days",
+                 case.id,
+                 case.title,
+                 util::age_in_days(case.opened_date));
+    }
 }
 
 pub fn all_open_cases(conn: &rusqlite::Connection, user_id: i64)
@@ -32,10 +43,89 @@ pub fn all_open_cases(conn: &rusqlite::Connection, user_id: i64)
     rows.collect()
 }
 
-pub fn find_case(conn: &rusqlite::Connection, user_id: i64, query: Query)
+fn choose_case(conn: &rusqlite::Connection, user_id: i64, cases: Vec<Case>,
+               open_cases_only: bool)
     -> Result<Option<Case>, rusqlite::Error> {
-    // FIXME
-    Ok(None)
+    println!("Your query returned multiple results:\n");
+
+    print_cases(cases);
+    println!("");
+
+    let query = util::prompt(
+        "Please enter a case ID or part of the title: ");
+
+    find_case(conn, user_id, Query::new(query), open_cases_only)
+}
+
+pub fn find_case(conn: &rusqlite::Connection, user_id: i64, query: Query,
+                 open_cases_only: bool)
+    -> Result<Option<Case>, rusqlite::Error> {
+    match query {
+        Query::Id(id) => {
+            let mut stmt = try!(conn.prepare(
+                    "SELECT id, title, openeddate, closeddate
+                       FROM ews_case
+                      WHERE userid = :user_id
+                        AND id = :id"));
+            let rows = try!(stmt.query_map(&[&user_id, &id], |row| {
+                Case {
+                    id: row.get(0),
+                    title: row.get(1),
+                    user_id: user_id,
+                    opened_date: row.get(2),
+                    closed_date: row.get(3)
+                }
+            }));
+
+            let mut cases = Vec::<Case>::new();
+            for row in rows {
+                let row = try!(row);
+                if !open_cases_only || row.closed_date.is_none() {
+                    cases.push(row);
+                }
+            }
+
+            match cases.len() {
+                0 => Ok(None),
+                1 => Ok(Some(cases[0].clone())),
+                _ => { panic!("Found > 1 case in the db with the same id!"); }
+            }
+
+        },
+        Query::SearchString(search) => {
+            let mut stmt = try!(conn.prepare(
+                    "SELECT id, title, openeddate, closeddate
+                       FROM ews_case
+                      WHERE userid = :user_id
+                        AND title like :search"));
+            let rows = try!(stmt.query_map(&[&user_id,
+                                             &format!("%{}%", &search)],
+                                           |row| {
+                Case {
+                    id: row.get(0),
+                    title: row.get(1),
+                    user_id: user_id,
+                    opened_date: row.get(2),
+                    closed_date: row.get(3)
+                }
+            }));
+
+            let mut cases = Vec::<Case>::new();
+            for row in rows {
+                let row = try!(row);
+                if !open_cases_only || row.closed_date.is_none() {
+                    cases.push(row);
+                }
+            }
+
+            match cases.len() {
+                0 => Ok(None),
+                1 => Ok(Some(cases[0].clone())),
+                _ => choose_case(&conn, user_id, cases, open_cases_only)
+            }
+
+        }
+    }
 }
 
 pub fn create_case(conn: &rusqlite::Connection, title: String, user_id: i64, opened_date: Timespec)
