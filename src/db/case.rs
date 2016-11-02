@@ -99,7 +99,6 @@ pub fn no_action_in_days(days: i64, conn: &rusqlite::Connection, user_id: i64)
 
     // TODO:
     //
-    // - migration: add CreatedDate (required integer) to items
     // - write query that returns cases with no items within the last 30 days
     Ok(Vec::<Case>::new())
 }

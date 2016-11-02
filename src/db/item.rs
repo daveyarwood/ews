@@ -6,6 +6,7 @@ pub struct Item {
     pub id: i64,
     pub title: String,
     pub case_id: i64,
+    pub created_date: Timespec,
     pub follow_up_date: Option<Timespec>
 }
 
@@ -14,7 +15,7 @@ pub fn due_today(conn: &rusqlite::Connection, user_id: i64)
     let tomorrow = util::midnight_tomorrow();
 
     let mut stmt = try!(conn.prepare(
-        "SELECT i.id, i.title, i.caseid, i.followupdate
+        "SELECT i.id, i.title, i.caseid, i.createddate, i.followupdate
            FROM ews_item i
      INNER JOIN ews_case c ON c.id = i.caseid
           WHERE c.userid = :user_id
@@ -27,7 +28,8 @@ pub fn due_today(conn: &rusqlite::Connection, user_id: i64)
             id: row.get(0),
             title: row.get(1),
             case_id: row.get(2),
-            follow_up_date: row.get(3),
+            created_date: row.get(3),
+            follow_up_date: row.get(4),
         }
     }));
 

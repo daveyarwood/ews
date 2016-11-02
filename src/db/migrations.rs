@@ -44,6 +44,7 @@ ews_migration!(1470499980, CreateItems, "create items table",
                   id INTEGER PRIMARY KEY,
                   title TEXT NOT NULL,
                   caseid INTEGER NOT NULL,
+                  createddate INTEGER NOT NULL,
                   followupdate INTEGER,
                   FOREIGN KEY(caseid) REFERENCES ews_case(id)
                 );",
