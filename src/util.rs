@@ -9,6 +9,10 @@ pub fn age_in_days(then: Timespec) -> i64 {
     (now - then).num_days()
 }
 
+pub fn days_ago(n: i64) -> Timespec {
+    time::get_time() - Duration::days(n)
+}
+
 pub fn midnight_tomorrow() -> Timespec {
     let now = time::at(time::get_time());
 
