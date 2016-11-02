@@ -1,5 +1,6 @@
 use query::Query;
 use rusqlite;
+use std;
 use time;
 use time::Timespec;
 use util;
@@ -16,17 +17,13 @@ pub struct Case {
 pub fn print_cases(cases: Vec<Case>) {
     println!("ID\tTITLE\tOPEN FOR");
     for case in cases {
-        println!("{}\t{}\t{} days",
-                 case.id,
-                 case.title,
-                 util::age_in_days(case.opened_date));
+        let open_for = if case.closed_date.is_some() {
+            "".to_string()
+        } else {
+            format!("{} days", util::age_in_days(case.opened_date))
+        };
+        println!("{}\t{}\t{}", case.id, case.title, open_for);
     }
-}
-
-pub fn print_summary(conn: &rusqlite::Connection, user_id: i64, query: Query)
-    -> Result<(), rusqlite::Error> {
-    // TODO
-    Ok(())
 }
 
 pub fn all_open_cases(conn: &rusqlite::Connection, user_id: i64)
@@ -187,6 +184,29 @@ pub fn find_case(conn: &rusqlite::Connection, user_id: i64, query: Query,
         }
     }
 }
+
+pub fn print_summary(conn: &rusqlite::Connection, user_id: i64, query: Query)
+    -> Result<(), rusqlite::Error> {
+    let query_type = match query {
+        Query::Id(_) => "ID",
+        Query::SearchString(_) => "search string"
+    };
+
+    match try!(find_case(conn, user_id, query, false)) {
+        None => {
+            println!("No case found matching that {}.", query_type);
+            std::process::exit(1);
+        },
+        Some(case) => {
+            println!("ID:\t{}", case.id);
+            println!("Title:\t{}", case.title);
+            println!("Open?:\t{}", case.closed_date.is_none());
+        }
+    }
+
+    Ok(())
+}
+
 
 pub fn create_case(conn: &rusqlite::Connection, title: String, user_id: i64, opened_date: Timespec)
     -> Result<i64, rusqlite::Error> {

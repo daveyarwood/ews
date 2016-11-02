@@ -1,4 +1,4 @@
-use db::{case,item};
+use db::{case};
 use rusqlite;
 
 pub fn print_summary(conn: &rusqlite::Connection, user_id: i64)

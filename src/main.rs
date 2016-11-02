@@ -128,6 +128,7 @@ fn main() {
                         },
                         None => {
                             println!("No open case found with that {}.", query_type);
+                            std::process::exit(1);
                         }
                     }
                 });
